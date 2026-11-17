@@ -1,6 +1,10 @@
 #include <iostream>
 #include <windows.h>
 #include <string>
+#include "Deck.h"
+#include "TurnQueue.h"
+#include "Player.h"
+#include "GameLog.h"
 
 using namespace std;
 
@@ -127,15 +131,77 @@ int main()
     SetConsoleOutputCP(65001);
     SetConsoleCP(65001);
 
+    //РІВЕНЬ 1.
+    Deck<int> deck;
+    int cards[] = { 4, 2, 6, 3, 5, 1, 7, 2, 4, 3 };
+    for (int card : cards)
+        deck.putOnTop(card);
+    deck.show();
+    cout << "Размер: " << deck.size() << endl;
+
+    int card1, card2;
+    deck.draw(card1);
+    deck.draw(card2);
+    cout << "Берём первую карту - " << card1 << "\nБерём вторую карту - " << card2 << endl;
+    cout << "Новый размер колоды: " << deck.size() << endl;
+
+    Deck<int> empty;
+    empty.draw(card2);
+
+    //РІВЕНЬ 2.
+    TurnQueue<Player> players;
+    players.enqueue(Player("Олена", 10));
+    players.enqueue(Player("Марко", 10));
+    players.enqueue(Player("Тарас", 10));
+    GameLog<string> gameLog;
+
+    while (players.size() > 1 && !deck.isEmpty())
+    {
+        Player& player = players.current();
+        int card;
+        deck.draw(card);
+        player.takeDamage(card);
+
+        cout << player.getName() << " тягне карту " << card <<  "->" << player << endl;
+        gameLog.addToTail(player.getName() + ": -" + to_string(card) + " HP");
+        if (!player.isAlive())
+        {
+            cout << "Игрок: " << player.getName() << " выбывает!" << endl;
+            gameLog.addToTail("Игрок: " + player.getName() + " выбывает!");
+            players.removeCurrent();
+        }
+        else
+            players.nextTurn();
+    }
+
+    if (players.size() == 1)
+    {
+        cout << "Победитель: " << players.current().getName() << "!" << endl;
+        gameLog.addToTail("Победитель: " + players.current().getName() + "!");
+    }
+    else
+    {
+        cout << "Колода закончилась!" << endl;
+        gameLog.addToTail("Колода закончилась!");
+        players.show();
+    }
+
+    //РІВЕНЬ 3.
+    gameLog.reverse();
+    cout << "----------- Game Log -----------" << endl;
+    gameLog.show();
+
     return 0;
 }
 
 /*
   ВІДПОВІДІ НА ЧАСТИНУ «ПОЯСНИ»
 
-  1.
+  1.Ви поклали карти в порядку 4, 2, 6, 3, 5 ... Яку карту draw повернув першою і чому?
+  draw вернул первую 3, потому что Deck реализован по принципу LIFO
 
-  2.
+  2.Чому draw приймає T& card і повертає bool, а не просто повертає T? Що мав би повернути такий метод,
+     якщо колода порожня?
 
   3.
 
